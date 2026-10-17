@@ -1,0 +1,361 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RALSEI GPT 💚</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #10251f;
+  color: #e8f8eb;
+  font-family: Arial, sans-serif;
+}
+
+.app {
+  max-width: 600px;
+  height: 100dvh;
+  margin: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #345447;
+}
+
+.avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #285743;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+}
+
+h1 {
+  color: #b5f3b5;
+  font-size: 23px;
+  margin: 0 0 5px;
+}
+
+.status {
+  color: #9ed5ad;
+  font-size: 12px;
+}
+
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 0;
+}
+
+.welcome {
+  text-align: center;
+  margin: auto 0;
+  color: #b5f3b5;
+  line-height: 1.6;
+}
+
+.flower { font-size: 42px; }
+
+.message {
+  max-width: 88%;
+  padding: 12px 15px;
+  border-radius: 18px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.bot {
+  align-self: flex-start;
+  background: #1d3a30;
+  border-bottom-left-radius: 5px;
+}
+
+.user {
+  align-self: flex-end;
+  background: #285743;
+  border-bottom-right-radius: 5px;
+}
+
+.time {
+  margin-top: 5px;
+  color: #a4c5ad;
+  font-size: 10px;
+}
+
+form {
+  display: flex;
+  gap: 8px;
+}
+
+input {
+  width: 0;
+  flex: 1;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 24px;
+  border: 1px solid #456653;
+  background: #20382f;
+  color: white;
+  font-size: 16px;
+}
+
+button {
+  border: 0;
+  border-radius: 22px;
+  padding: 12px 16px;
+  background: #78c98a;
+  color: #10251f;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.tools {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.tools button {
+  flex: 1;
+  padding: 10px 5px;
+  background: #20382f;
+  color: #b5f3b5;
+  border: 1px solid #456653;
+  font-size: 12px;
+}
+
+@media (max-width: 380px) {
+  .app { padding: 9px; }
+  h1 { font-size: 20px; }
+  .message { max-width: 94%; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="avatar">🐐</div>
+  <div>
+    <h1>RALSEI GPT</h1>
+    <div class="status">● Your fluffy AI friend</div>
+  </div>
+</header>
+
+<main id="chat">
+  <div class="welcome" id="welcome">
+    <div class="flower">✿</div>
+    <strong>Welcome, friend!</strong>
+    <p>I'm happy you're here. What would you like to talk about? 💚</p>
+  </div>
+</main>
+
+<form id="form">
+  <input id="message" placeholder="Message Ralsei..."
+         autocomplete="off" required>
+  <button type="submit">Send</button>
+</form>
+
+<div class="tools">
+  <button type="button" id="memoryBtn">Memory</button>
+  <button type="button" id="prefsBtn">Preferences</button>
+  <button type="button" id="clearBtn">Clear chat</button>
+</div>
+
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+const input = document.getElementById("message");
+const form = document.getElementById("form");
+
+let history = [];
+let prefs = { nickname: "", interests: "" };
+
+try {
+  history = JSON.parse(localStorage.getItem("ralseiHistory") || "[]");
+  prefs = JSON.parse(localStorage.getItem("ralseiPrefs") ||
+    '{"nickname":"","interests":""}');
+
+  if (!Array.isArray(history)) history = [];
+} catch (e) {
+  history = [];
+  prefs = { nickname: "", interests: "" };
+}
+
+function save() {
+  try {
+    localStorage.setItem("ralseiHistory", JSON.stringify(history));
+    localStorage.setItem("ralseiPrefs", JSON.stringify(prefs));
+  } catch (e) {
+    console.log("Browser storage unavailable.");
+  }
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString([], {
+    hour: "numeric", minute: "2-digit"
+  });
+}
+
+function showMessage(sender, text, time) {
+  const welcome = document.getElementById("welcome");
+  if (welcome) welcome.remove();
+
+  const bubble = document.createElement("div");
+  bubble.className = "message " + sender;
+
+  const words = document.createElement("div");
+  words.textContent = text;
+
+  const stamp = document.createElement("div");
+  stamp.className = "time";
+  stamp.textContent = time || timeNow();
+
+  bubble.append(words, stamp);
+  chat.appendChild(bubble);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function render() {
+  chat.innerHTML = "";
+
+  if (history.length === 0) {
+    const welcome = document.createElement("div");
+    welcome.id = "welcome";
+    welcome.className = "welcome";
+    welcome.innerHTML =
+      "<div class='flower'>✿</div><strong>Welcome, friend!</strong><p>I'm happy you're here. What would you like to talk about? 💚</p>";
+    chat.appendChild(welcome);
+    return;
+  }
+
+  history.forEach(function(item) {
+    showMessage(item.sender, item.text, item.time);
+  });
+}
+
+function replyTo(text) {
+  const t = text.toLowerCase();
+  const name = prefs.nickname ? ", " + prefs.nickname : "";
+
+  if (/^(hi|hey|hello|hiya)\b/.test(t))
+    return "Hello" + name + "! It's wonderful to see you! 💚";
+
+  if (t.includes("how are you"))
+    return "I'm doing well, thank you for asking! How are you? 🌿";
+
+  if (t.includes("sad") || t.includes("upset"))
+    return "I'm sorry you're having a tough time" + name +
+      ". I'm here to listen if you'd like to talk. 💚";
+
+  if (t.includes("joke"))
+    return "Why did the fluffy prince smile? Because he had a woolly good day! Hehe. 🌿";
+
+  if (t.includes("help"))
+    return "Of course! Tell me what you need help with, and we'll take it one step at a time. 💚";
+
+  if (t.includes("thank"))
+    return "You're very welcome" + name + "! I'm happy to help. 💚";
+
+  if (t.includes("remember"))
+    return prefs.interests
+      ? "I have your saved interests: " + prefs.interests + " 💚"
+      : "You can save your interests with the Preferences button!";
+
+  if (t.includes("bye"))
+    return "Goodbye, friend! Take care, and come back anytime. 💚";
+
+  return "That's interesting" + name +
+    "! Tell me more. I'd love to hear about it. 🌿";
+}
+
+form.addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  const userTime = timeNow();
+
+  history.push({
+    sender: "user", text: text, time: userTime
+  });
+
+  showMessage("user", text, userTime);
+  input.value = "";
+  save();
+
+  const typing = document.createElement("div");
+  typing.className = "typing";
+  typing.textContent = "Ralsei is thinking... 💚";
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(function() {
+    typing.remove();
+
+    const answer = replyTo(text);
+    const botTime = timeNow();
+
+    history.push({
+      sender: "bot", text: answer, time: botTime
+    });
+
+    showMessage("bot", answer, botTime);
+    save();
+  }, 650);
+});
+
+document.getElementById("clearBtn").addEventListener("click", function() {
+  if (!confirm("Clear all chat messages?")) return;
+  history = [];
+  save();
+  render();
+});
+
+document.getElementById("memoryBtn").addEventListener("click", function() {
+  alert("RALSEI MEMORY 💚\n\nNickname: " +
+    (prefs.nickname || "Not set") +
+    "\nInterests: " + (prefs.interests || "Not set"));
+});
+
+document.getElementById("prefsBtn").addEventListener("click", function() {
+  const nickname = prompt("What should Ralsei call you?", prefs.nickname);
+  if (nickname === null) return;
+
+  const interests = prompt(
+    "What interests should Ralsei remember?",
+    prefs.interests
+  );
+  if (interests === null) return;
+
+  prefs.nickname = nickname.trim();
+  prefs.interests = interests.trim();
+  save();
+
+  alert("Preferences saved! 💚");
+});
+
+render();
+</script>
+</body>
+</html>
